@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <meta charset = "utf-8">
+    <meta name = "viewport" content = "width = device-width">
+    <title>Image Colour Palatte Generator</title>
+    <script src = "https://auth.hyperhacker.repl.co/script.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+
+        * {
+            outline: none
+        }
+
+        body {
+            background: #393b56;
+            color: #fff;
+            font-family: "Poppins";
+            text-align: center;
+            margin: 10px
+        }
+
+        #img {
+            margin-bottom: 20px
+        }
+
+        .c {
+            position: relative;
+            padding: 20px;
+            display: inline-block;
+            margin-left: 10px;
+            border: 2px #000 solid;
+            top: 1em
+        }
+
+        button {
+            background: #2c2d42;
+            color: #fff;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            padding: 10px
+        }
+
+        a {
+            color: #aaa;
+            text-decoration: none
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <h1>Image Colour Palette Generator</h1>
+    <button onclick = "login()">Login with Replit</button> and like <a href = "/__repl">this Repl</a> for 10MB max upload.<br><br>
+    <input type = "file" id = "img"><br>
+    <img id = "display" style = "width: 10%"><br>
+    <div id = "colours"></div>
+
+    <script>
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.readAsDataURL(file)
+            reader.onload = () => resolve(reader.result)
+            reader.onerror = error => reject(error)
+        })
+
+        const img = document.getElementById("img")
+
+        img.onchange = async () => {
+            document.getElementById("colours").innerHTML = "Loading..."
+
+            const image = img.files[0]
+            const size = image.size
+            const b64 = await toBase64(image)
+
+            document.getElementById("display").src = b64
+
+            if (image.type.startsWith("image/")) {
+                fetch("/api", {
+                    method: "POST",
+                    body: JSON.stringify({base64: b64})
+                }).then(r => r.json()).then(data => {
+                    if ("vals" in data) {
+                        var c = ""
+                        var vals = []
+                        for (let i of Object.keys(data.vals)) vals.push([i, data.vals[i]])
+                        var items = vals.sort((a, b) => {return a[1] - b[1]}).reverse()
+                        for (let [k, v] of items) {c += `${k} in ${v} pixels<div style = "background: ${k}" class = "c"></div><br>`}
+                        document.getElementById("colours").innerHTML = `${size} bytes<br>${items.length} different colours<br>` + c
+                    }
+                    else if ("sizeerror" in data) {document.getElementById("colours").innerHTML = "Files no larger than 5MB (or 10MB if you've liked this Repl and logged in)"}
+                    else {document.getElementById("colours").innerHTML = "An error occurred"}
+                })
+            }
+            else {document.getElementById("colours").innerHTML = "Only image file types supported"}
+        }
+    </script>
+
+</body>
+
+</html>
